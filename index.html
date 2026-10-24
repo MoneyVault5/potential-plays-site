@@ -49,7 +49,9 @@ input[type=file]{max-width:100%}
 .utilbar{max-width:1440px;margin:0 auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 14px 0}
 .utilbar .ume{margin-right:auto;font-size:12px;color:#8dc8ff;font-weight:700}
 /* vault header */
-.vault-header{flex-wrap:wrap;max-width:1440px;margin:6px auto 0;padding:20px 18px 16px;display:flex;align-items:center;gap:22px;border:1px solid #8a6d1f66;border-radius:16px;background:radial-gradient(ellipse 55% 190px at 18% -40px,#155a9e88 0%,transparent 65%),radial-gradient(ellipse 45% 170px at 88% -30px,#8a6d1f55 0%,transparent 60%),linear-gradient(120deg,#04101f,#092a52 48%,#0a1424);box-shadow:0 0 34px #0965bb30,inset 0 0 60px #00000066;position:relative;overflow:hidden}
+.vault-header{flex-wrap:wrap;max-width:1440px;margin:6px auto 0;padding:20px 18px 16px;display:flex;flex-direction:column;align-items:stretch;gap:14px;border:1px solid #8a6d1f66;border-radius:16px;background:radial-gradient(ellipse 55% 190px at 18% -40px,#155a9e88 0%,transparent 65%),radial-gradient(ellipse 45% 170px at 88% -30px,#8a6d1f55 0%,transparent 60%),linear-gradient(120deg,#04101f,#092a52 48%,#0a1424);box-shadow:0 0 34px #0965bb30,inset 0 0 60px #00000066;position:relative;overflow:hidden}
+.vh-banner{width:100%}
+.vh-banner img{width:100%;height:auto;display:block;border-radius:10px}
 .vh-left{min-width:300px}
 .vh-crown{font-size:30px;line-height:1;filter:drop-shadow(0 0 10px #e9c77999)}
 .vh-logo{font-style:italic;font-weight:900;line-height:.95;letter-spacing:.5px}
@@ -208,8 +210,7 @@ main{padding-bottom:110px}
 <div id="appwrap" hidden>
 <div class="utilbar"><span class="ume" id="util-me"></span><label class="pill">⇪ Import<input hidden type="file" accept="application/json" onchange="importData(this)"></label><button class="pill" id="export">⇩ Backup</button><button class="pill" id="signout" hidden>Sign out</button></div>
 <div class="vault-header">
-  <div class="vh-left"><div class="vh-crown">👑</div><div class="vh-logo"><span class="l1">POTENTIAL</span><span class="l2">PLAYS</span></div><div class="vh-sub" id="vh-sub">QUIS MONEY <span class="gold">×</span> GOD FATHER VIC</div></div>
-  <div class="vh-tag">TWO MINDS. ONE BOARD.<br>REAL PLAYS. REAL MONEY.</div>
+  <div class="vh-banner"><img src="header-banner.jpg" alt="Potential Plays — Quis Money × God Father Vic"></div>
   <div class="vh-cards" id="vh-cards">
     <div class="hcard"><div class="havatar" id="photo-quis">👑</div><div><div class="hname">QUIS MONEY</div><div class="hrec" id="hq-rec">0W – 0L</div><div class="hpct" id="hq-pct">0%</div></div></div>
     <div class="hcard gold"><div class="havatar" id="photo-vic">👑</div><div><div class="hname">GOD FATHER VIC</div><div class="hrec" id="hv-rec">0W – 0L</div><div class="hpct" id="hv-pct">0%</div></div></div>
