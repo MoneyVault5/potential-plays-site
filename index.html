@@ -179,11 +179,13 @@ main{padding-bottom:110px}
   #sidenav{display:none}
   .nav{display:flex}
   .dash{grid-template-columns:1fr}
-  .vault-header{flex-wrap:wrap;margin:6px 8px 0;padding:16px 14px}
-  .vh-left{min-width:0}
+  .vault-header{flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:calc(100% - 16px);margin:6px 8px 0;padding:16px 14px}
+  .vh-left{min-width:0;width:100%}
   .vh-logo .l1,.vh-logo .l2{font-size:32px}
-  .vh-cards{flex-wrap:wrap;width:100%}
-  .hcard{flex:1;min-width:150px;padding:10px 12px}
+  .vh-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;min-width:0}
+  .hcard{min-width:0;padding:10px 12px}
+  .hcard.comb{grid-column:1/-1}
+  .utilbar{width:calc(100% - 16px);margin:8px 8px 0}
   .topnav{overflow-x:auto;padding-bottom:4px}
   button.addplay{margin-left:0}
   main{padding:0 2px 110px}
