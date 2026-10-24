@@ -525,6 +525,7 @@ async function ppAnalyze(body,sequence){
     if(response.error)throw new Error(response.error.message||'Could not read bet slip.');
     const result=response.data||{};
     if(result.error)throw new Error(result.error);
+    if(body.imageDataUrl&&result.ai_available===false&&ppImageForAI){await ppTryOCR(sequence);return;}
     const info=result.slip||{};
     const f=document.getElementById('bet-form');
     if(info.title)f.elements.title.value=String(info.title).slice(0,150);
@@ -537,6 +538,7 @@ async function ppAnalyze(body,sequence){
     if(!full)ppExpandDetails();else document.getElementById('slip-manual').open=false;
   }catch(e){
     if(sequence!==ppRequestId)return;
+    if(body.imageDataUrl&&ppImageForAI){await ppTryOCR(sequence);return;}
     ppSetState((e&&e.message?e.message:'This slip could not be read.')+' Upload a screenshot or edit details below.',true);
     ppExpandDetails();
   }finally{if(sequence===ppRequestId)ppReading=false}
@@ -569,6 +571,54 @@ function ppImageData(file){
     };
     reader.readAsDataURL(file);
   });
+}
+/* On-device OCR fallback for screenshots when the server AI extractor is unavailable. */
+let ppOcrLoader=null;
+async function ppLoadOCR(){
+  if(window.Tesseract)return window.Tesseract;
+  if(!ppOcrLoader)ppOcrLoader=new Promise((resolve,reject)=>{
+    const src=document.createElement('script');
+    src.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    src.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR library could not load'));
+    src.onerror=()=>reject(new Error('Screenshot reading needs an internet connection.'));
+    document.head.appendChild(src);
+  });
+  return ppOcrLoader;
+}
+async function ppTryOCR(sequence){
+  if(!ppImageForAI)return false;
+  ppSetState('Reading screenshot text on your device…',false);
+  try{
+    const lib=await ppLoadOCR();
+    if(sequence!==ppRequestId)return false;
+    const worker=await lib.createWorker('eng');
+    let recognized='';
+    try{const result=await worker.recognize(ppImageForAI);recognized=result.data&&result.data.text||''}
+    finally{await worker.terminate()}
+    if(sequence!==ppRequestId)return false;
+    const rawLines=recognized.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const lines=rawLines.map(x=>x.replace(/\s+/g,' ').replace(/\bO(?=\d)/g,'0'));
+    const words=lines.join('\n');
+    const eligible=lines.filter(x=>/(?:over|under|moneyline|\bML\b|touchdown|\bTD\b|points|rebounds|assists|receptions|rushing|receiving|passing|yards|hits|runs|strikeouts|spread|anytime|to score)/i.test(x) && !/(?:total odds|potential payout|bet amount|share slip|wager amount|sportsbook)/i.test(x)).slice(0,20);
+    let combinedOdds='';
+    const oddsLabel=words.match(/(?:total|combined|overall|parlay)\s*(?:parlay)?\s*odds\s*[:=]?\s*([+-]\d{3,5}|\d+\.\d{2,4})/i);
+    if(oddsLabel)combinedOdds=oddsLabel[1];
+    else{
+      const parlayLine=lines.find(x=>/\b(?:\d+\s*leg|parlay)\b/i.test(x)&&/[+]\d{3,5}\b/.test(x));
+      if(parlayLine)combinedOdds=(parlayLine.match(/[+]\d{3,5}\b/)||[])[0]||'';
+    }
+    const f=document.getElementById('bet-form');
+    const name=lines.find(x=>/\bparlay\b|\bstraight bet\b|\bsingle\b/i.test(x))||'';
+    if(name&&!f.elements.title.value.trim())f.elements.title.value=name.slice(0,150);
+    if(eligible.length&&!f.elements.legs.value.trim())f.elements.legs.value=eligible.join('\n');
+    if(combinedOdds&&!f.elements.odds.value.trim())f.elements.odds.value=combinedOdds;
+    ppShowReview();ppUpdatePayout();ppExpandDetails();
+    ppSetState('Screenshot scanned. Please verify every highlighted selection and the combined odds—image text can be misread.'+(combinedOdds?'':' Total odds were not confidently detected.'),!eligible.length||!combinedOdds);
+    return !!eligible.length;
+  }catch(e){
+    if(sequence===ppRequestId){ppSetState('The screenshot is attached, but automatic reading failed. Expand Edit details to confirm your selections and odds.',true);ppExpandDetails()}
+    return false;
+  }
 }
 async function ppReadImage(el){
   const file=el.files&&el.files[0];if(!file)return;
