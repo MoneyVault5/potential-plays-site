@@ -1,4 +1,4 @@
-const C = 'potential-plays-v4';
+const C = 'potential-plays-v5';
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])).then(() => self.skipWaiting()));
 });
