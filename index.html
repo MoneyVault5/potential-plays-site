@@ -298,14 +298,15 @@ main{padding-bottom:110px}
     <label>Who owns this play?<select class="field" name="owner" id="slip-owner"><option value="quis">Quis Money</option><option value="vic">God Father Vic</option><option value="split">Both / Shared</option></select></label>
   </div>
   <div class="slip-return"><div><div class="tiny">TOTAL POTENTIAL PAYOUT</div><div id="slip-payout-preview" class="slip-return-total">—</div></div><div><div class="tiny">POTENTIAL PROFIT</div><b id="slip-profit-preview" class="green">—</b></div></div>
+  <button type="submit" id="slip-save" class="btn" style="width:100%;margin:12px 0 3px;padding:14px">SAVE PLAY → RATE 0–10</button>
+  <div class="tiny" style="text-align:center;margin:3px 0 12px">Once posted, you and Vic can rate it independently from 0–10.</div>
   <details id="slip-manual"><summary>✎ Edit / confirm slip details &amp; odds</summary>
     <label>Bet name<input class="field" name="title" maxlength="150" placeholder="3-leg NBA parlay"></label>
     <label>Exact selections — one per line<textarea class="field" name="legs" rows="4" placeholder="LeBron James 25+ points&#10;Lakers moneyline"></textarea></label>
     <label>Combined slip odds (American +250 / -110 or decimal 3.50)<input class="field" name="odds" id="slip-odds" autocomplete="off" placeholder="+250" oninput="ppUpdatePayout()"></label>
     <div class="tiny">If a link or photo doesn't reveal the complete slip, use these fields so we don't invent picks or odds.</div>
   </details>
-  <button type="submit" id="slip-save" class="btn" style="width:100%;margin-top:15px">SAVE PLAY → RATE 0–10</button>
-  <div class="tiny" style="text-align:center;margin-top:10px">After saving, rate the posted play 0–10 on its card. You and Vic can rate independently.</div>
+
 </form></dialog>
 <dialog id="transfer-dialog"><form id="transfer-form"><div class="row"><h2>Record payment</h2><button type="button" class="btn secondary" onclick="document.getElementById('transfer-dialog').close()">✕</button></div><label>Sent by<select class="field" name="from" id="tf-from"></select></label><label>Received by<select class="field" name="to" id="tf-to"></select></label><label>Amount ($)<input class="field" type="number" min="0.01" step="0.01" name="amount" required></label><label>Note<input class="field" name="note" placeholder="Cash App settlement"></label><button class="btn" type="submit">Record transfer</button></form></dialog>
 
@@ -491,10 +492,32 @@ function ppDecimalOdds(raw){
   if(Number.isInteger(n)&&n<=-100)return 1+100/Math.abs(n);
   return NaN;
 }
+/* Recover total American odds displayed inside a screenshot/link slip heading.
+   This only accepts labeled SINGLE BET / PARLAY headers or explicit total-odds labels. */
+function ppOddsFromHeading(text){
+  const t=String(text||'').replace(/\s+/g,' ').trim();
+  if(!t)return '';
+  const explicit=t.match(/\b(?:total|combined|overall)\s*(?:american\s*)?odds\s*[:=]?\s*([+-]\s*\d{3,5}|\d+\.\d{2,4})\b/i);
+  if(explicit)return explicit[1].replace(/\s/g,'');
+  const header=t.match(/\b(?:single\s*bet|straight\s*bet|(?:\d+\s*)?leg\s*parlay|parlay)\b[^+\-\d]{0,24}([+-]\s*\d{3,5})(?=$|[^\d])/i);
+  return header?header[1].replace(/\s/g,''):'';
+}
+function ppRecoverOdds(){
+  const f=document.getElementById('bet-form');
+  if(f.elements.odds.value.trim())return false;
+  const header=String(f.elements.title.value||'');
+  const found=ppOddsFromHeading(header);
+  if(found&&Number.isFinite(ppDecimalOdds(found))){
+    f.elements.odds.value=found;
+    return true;
+  }
+  return false;
+}
 function ppUpdatePayout(){
   const f=document.getElementById('bet-form');
-  const stake=Number(f.elements.stake.value),decimal=ppDecimalOdds(f.elements.odds.value);
-  const valid=Number.isFinite(stake)&&stake>0&&Number.isFinite(decimal)&&decimal>1;
+  ppRecoverOdds();
+  const stakeText=f.elements.stake.value.trim(),stake=Number(stakeText),decimal=ppDecimalOdds(f.elements.odds.value);
+  const valid=!!stakeText&&Number.isFinite(stake)&&stake>0&&Number.isFinite(decimal)&&decimal>1;
   document.getElementById('slip-payout-preview').textContent=valid?money(Math.round(stake*decimal*100)/100):'—';
   document.getElementById('slip-profit-preview').textContent=valid?money(Math.round(stake*(decimal-1)*100)/100):'—';
 }
@@ -532,7 +555,7 @@ async function ppAnalyze(body,sequence){
     if(Array.isArray(info.legs)&&info.legs.length)f.elements.legs.value=info.legs.join('\n');
     if(info.american_odds)f.elements.odds.value=String(info.american_odds);
     else if(info.decimal_odds)f.elements.odds.value=String(info.decimal_odds);
-    ppShowReview();ppUpdatePayout();
+    ppRecoverOdds();ppShowReview();ppUpdatePayout();
     const full=!!(f.elements.title.value.trim()&&f.elements.legs.value.trim()&&Number.isFinite(ppDecimalOdds(f.elements.odds.value)));
     ppSetState(result.message||(full?'Review the imported slip before saving.':'Check missing details below.'),!full);
     if(!full)ppExpandDetails();else document.getElementById('slip-manual').open=false;
@@ -603,17 +626,20 @@ async function ppTryOCR(sequence){
     let combinedOdds='';
     const oddsLabel=words.match(/(?:total|combined|overall|parlay)\s*(?:parlay)?\s*odds\s*[:=]?\s*([+-]\d{3,5}|\d+\.\d{2,4})/i);
     if(oddsLabel)combinedOdds=oddsLabel[1];
-    else{
-      const parlayLine=lines.find(x=>/\b(?:\d+\s*leg|parlay)\b/i.test(x)&&/[+]\d{3,5}\b/.test(x));
-      if(parlayLine)combinedOdds=(parlayLine.match(/[+]\d{3,5}\b/)||[])[0]||'';
+    if(!combinedOdds){
+      const heading=lines.find(x=>/\b(?:single\s*bet|straight\s*bet|(?:\d+\s*)?leg\s*parlay|parlay)\b/i.test(x));
+      combinedOdds=ppOddsFromHeading(heading||'');
     }
     const f=document.getElementById('bet-form');
     const name=lines.find(x=>/\bparlay\b|\bstraight bet\b|\bsingle\b/i.test(x))||'';
     if(name&&!f.elements.title.value.trim())f.elements.title.value=name.slice(0,150);
     if(eligible.length&&!f.elements.legs.value.trim())f.elements.legs.value=eligible.join('\n');
     if(combinedOdds&&!f.elements.odds.value.trim())f.elements.odds.value=combinedOdds;
-    ppShowReview();ppUpdatePayout();ppExpandDetails();
-    ppSetState('Screenshot scanned. Please verify every highlighted selection and the combined odds—image text can be misread.'+(combinedOdds?'':' Total odds were not confidently detected.'),!eligible.length||!combinedOdds);
+    ppRecoverOdds();
+    ppShowReview();ppUpdatePayout();
+    const complete=!!(f.elements.title.value.trim()&&f.elements.legs.value.trim()&&Number.isFinite(ppDecimalOdds(f.elements.odds.value)));
+    document.getElementById('slip-manual').open=!complete;
+    ppSetState(complete?'Odds detected. Verify the screenshot and selections, then tap Save Play above Edit Details.':'Screenshot scanned. Check or correct missing selections and total odds under Edit Details before saving.',!complete);
     return !!eligible.length;
   }catch(e){
     if(sequence===ppRequestId){ppSetState('The screenshot is attached, but automatic reading failed. Expand Edit details to confirm your selections and odds.',true);ppExpandDetails()}
@@ -640,13 +666,14 @@ $('bet-form').addEventListener('submit',async e=>{
   e.preventDefault();
   if(!me)return;
   const f=e.target,fd=new FormData(f),file=fd.get('image');
-  const title=String(fd.get('title')||'').trim();
+  ppRecoverOdds();
+  const title=String(f.elements.title.value||'').trim();
   const legsText=String(fd.get('legs')||'').split('\n').map(s=>s.trim()).filter(Boolean);
-  const stake=Number(fd.get('stake')),decimal=ppDecimalOdds(fd.get('odds'));
+  const stake=Number(fd.get('stake')),decimal=ppDecimalOdds(f.elements.odds.value);
   const owner=String(fd.get('owner')||'');
   const link=String(fd.get('link')||'').trim();
   if(!title||!legsText.length){ppSetState('The bet name and exact selections must be visible before saving. Expand Edit details to finish the slip.',true);ppExpandDetails();return}
-  if(!Number.isFinite(decimal)||decimal<=1){ppSetState('Combined total odds are missing or invalid. Expand Edit details, enter odds (for example +250), and your payout will calculate automatically.',true);ppExpandDetails();return}
+  if(!Number.isFinite(decimal)||decimal<=1){ppSetState('Please enter the total slip odds under Edit Details (for example +250). We will calculate the payout.',true);ppExpandDetails();f.elements.odds.scrollIntoView({behavior:'smooth',block:'center'});f.elements.odds.focus();return}
   if(!Number.isFinite(stake)||stake<=0){ppSetState('Enter how much you want to wager.',true);f.elements.stake.focus();return}
   if(!['quis','vic','split'].includes(owner)){ppSetState('Choose Quis, Vic, or Both for ownership.',true);return}
   if(link){try{if(new URL(link).protocol!=='https:')throw Error('invalid')}catch{ppSetState('Use a valid HTTPS share link.',true);return}}
