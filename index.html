@@ -197,6 +197,27 @@ main{padding-bottom:110px}
   .stats{grid-template-columns:repeat(2,1fr)}
 }
 
+
+/* Direct visual polish: responsive vault layout and consistent full-width mobile header */
+html{width:100%;overflow-x:hidden}body{width:100%;overflow-x:hidden}
+.vault-header,.utilbar,.shell{box-sizing:border-box}
+.fcard,.card,.rcard{transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+.fcard:hover{transform:translateY(-1px);box-shadow:0 8px 28px #0008,0 0 22px #167ee92b}
+.topnav button:focus-visible,#sidenav button:focus-visible,.btn:focus-visible{outline:2px solid #f2cf7a;outline-offset:3px}
+@media(max-width:1023px){
+ .vault-header,.utilbar{width:calc(100% - 16px)!important;max-width:calc(100% - 16px)!important;min-width:0!important;box-sizing:border-box!important}
+ .vault-header{display:flex!important;align-items:stretch!important;justify-content:stretch!important}
+ .vh-left,.vh-cards{max-width:100%;min-width:0!important}
+ .vh-cards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+ .vh-cards .hcard{min-width:0!important;width:100%!important}
+ .vh-cards .hcard.comb{grid-column:1/-1!important}
+ .shell{width:100%;max-width:100%;min-width:0}
+ .topnav{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ .topnav::-webkit-scrollbar{display:none}
+ .feedhead,.fcard,.rail{min-width:0}
+}
+@media(max-width:390px){.vh-logo .l1,.vh-logo .l2{font-size:28px}.hcard{padding:9px 8px}.topnav button{padding:10px 12px;font-size:12px}.feedhead h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.fcard,.card,.rcard{transition:none}.fcard:hover{transform:none}}
 </style></head><body><section id="gate" class="gatewrap" hidden><div class="card" id="signin-card"><div class="section-title" style="margin-top:0">👑 MEMBERS ONLY</div><p class="muted" id="gate-msg">Potential Plays is private — just Quis Money and God Father Vic. Sign in with your username and password. No email, no sign-in links.</p><label>Username<input class="field" id="gate-user" type="text" autocomplete="username" placeholder="quis or vic"></label><label>Password<input class="field" id="gate-pass" type="password" autocomplete="current-password" placeholder="Your password"></label><button class="btn" style="width:100%" id="gate-signin">Sign in</button><div class="tiny" id="gate-note" style="margin-top:10px"></div><div class="tiny" style="margin-top:10px">First time, or forgot your password? Use the private activation link sent to you by text — it sets your password and doubles as a reset link. You stay signed in on this phone after that.</div></div><div class="card" id="activate-card" hidden><div class="section-title" style="margin-top:0" id="act-title">🔑 ACTIVATE YOUR ACCOUNT</div><p class="muted" id="act-msg">Checking your link…</p><label>Choose your password<input class="field" id="act-pass" type="password" autocomplete="new-password" placeholder="At least 10 characters"></label><label>Confirm password<input class="field" id="act-pass2" type="password" autocomplete="new-password" placeholder="Same password again"></label><button class="btn" style="width:100%" id="act-go">Set my password &amp; sign in</button><div class="tiny" id="act-note" style="margin-top:10px"></div></div></section>
 <div id="appwrap" hidden>
 <div class="utilbar"><span class="ume" id="util-me"></span><label class="pill">⇪ Import<input hidden type="file" accept="application/json" onchange="importData(this)"></label><button class="pill" id="export">⇩ Backup</button><button class="pill" id="signout" hidden>Sign out</button></div>
