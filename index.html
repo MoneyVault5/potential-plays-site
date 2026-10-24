@@ -200,6 +200,20 @@ main{padding-bottom:110px}
   .stats{grid-template-columns:repeat(2,1fr)}
 }
 
+
+/* Quick bet slip import: preserve existing main design */
+.quick-slip-dialog{width:min(96vw,560px);max-height:92dvh;overflow:auto;padding:20px;border:1px solid #2369ab;box-shadow:0 20px 70px #000b}
+.quick-slip-dialog .row{gap:10px}.quick-slip-dialog h2{margin:0 0 5px}
+.slip-source-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.slip-upload{display:inline-flex;align-items:center;justify-content:center;border:1px solid #4a9beb;border-radius:9px;background:linear-gradient(160deg,#102f51,#061a31);color:#d1ebff;padding:11px 16px;cursor:pointer;font-size:13px;font-weight:800;margin:0}
+.slip-review{border:1px solid #2369ab;background:#071c32;border-radius:10px;padding:12px;font-size:13px}
+.slip-review b{color:#f5cb79}.slip-review ul{margin:8px 0;padding-left:22px}.slip-review li{margin:5px 0}
+.slip-return{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px;padding:13px 15px;background:linear-gradient(130deg,#101f2e,#081428);border:1px solid #8a6d1f;border-radius:12px}
+.slip-return-total{font-size:27px;font-weight:900;color:#f2cf7a;margin-top:4px}
+#slip-manual{border:1px solid #274b71;border-radius:9px;padding:10px 12px;background:#07172a}
+#slip-manual summary{cursor:pointer;color:#abd7ff;font-size:13px;font-weight:700}
+#slip-manual[open] summary{margin-bottom:11px}
+.slip-image-thumb{display:block;max-width:100%;max-height:170px;object-fit:contain;margin:8px auto;border:1px solid #24547c;border-radius:8px}
 </style><style>/* TASK-0015 — members & invites */
 .mrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e416b}.mrow:last-of-type{border-bottom:0}
 .minfo{min-width:0}.macts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -271,7 +285,28 @@ main{padding-bottom:110px}
 </div>
 </div>
 <nav class="nav" id="nav" hidden><button data-nav="home" class="active" onclick="showTab('home')"><span>⌂</span>Home</button><button data-nav="plays" onclick="showTab('plays')"><span>♛</span>Potential Plays</button><button data-nav="bets" onclick="showTab('bets')"><span>⚡</span>Live Bets</button><button data-nav="profiles" onclick="showTab('profiles')"><span>♟</span>Profiles</button><button data-nav="money" onclick="showTab('money')"><span>▣</span>Money</button></nav>
-<dialog id="editor"><form id="bet-form"><div class="row"><h2 id="form-title">Add Bet</h2><button type="button" class="btn secondary" onclick="editor.close()">✕</button></div><label>Bet title<input class="field" name="title" placeholder="e.g. 3-leg NFL parlay" required></label><label>Selections (one per line)<textarea class="field" name="legs" rows="4" placeholder="A.J. Brown 5+ receptions"></textarea></label><div class="grid2"><label>Stake ($)<input class="field" name="stake" type="number" min="0" step="0.01" value="0" required></label><label>Total potential payout ($)<input class="field" name="payout" type="number" min="0" step="0.01" value="0" required></label></div><label>Ownership<select class="field" name="owner"><option value="unassigned">Unassigned — decide later</option><option value="split">50/50 Split</option><option value="quis">Quis Money personal</option><option value="vic">God Father Vic personal</option></select></label><label>Placed / funded by<select class="field" name="funded"><option value="unassigned">Unassigned — decide later</option><option value="vic">God Father Vic</option><option value="quis">Quis Money</option><option value="both">Each paid their share</option></select></label><label>Sportsbook / Gambly share link<input class="field" name="link" type="url" placeholder="https://..."></label><label>Bet slip screenshot<input class="field" name="image" type="file" accept="image/*"></label><div id="image-preview"></div><button type="submit" class="btn" style="width:100%">Save</button></form></dialog>
+<dialog id="editor" class="quick-slip-dialog"><form id="bet-form">
+  <div class="row" style="align-items:center"><h2 id="form-title">New Play</h2><button type="button" class="btn secondary" onclick="document.getElementById('editor').close()">✕</button></div>
+  <div class="tiny" style="margin-bottom:12px">Paste your sportsbook/share link or upload a screenshot. We'll pull in the picks and odds where the source allows it.</div>
+  <label>Paste a bet link<input class="field" name="link" id="slip-url" type="url" autocomplete="off" placeholder="https://gambly.com/share-bet/..." oninput="ppQueueLink()"></label>
+  <div class="slip-source-row"><button type="button" class="btn secondary" id="slip-read-link" onclick="ppReadLink()">↗ Read link</button><span class="tiny">OR</span><label class="slip-upload">📷 Upload slip<input name="image" id="slip-image" type="file" accept="image/*" onchange="ppReadImage(this)" hidden></label></div>
+  <div id="slip-import-state" class="tiny" role="status" aria-live="polite" style="margin:10px 0">Your picks and odds will appear here before you save.</div>
+  <div id="image-preview"></div>
+  <div id="slip-review" class="slip-review" hidden></div>
+  <div class="grid2" style="margin-top:10px">
+    <label>Your wager ($)<input class="field" name="stake" id="slip-stake" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="25.00" oninput="ppUpdatePayout()" required></label>
+    <label>Who owns this play?<select class="field" name="owner" id="slip-owner"><option value="quis">Quis Money</option><option value="vic">God Father Vic</option><option value="split">Both / Shared</option></select></label>
+  </div>
+  <div class="slip-return"><div><div class="tiny">TOTAL POTENTIAL PAYOUT</div><div id="slip-payout-preview" class="slip-return-total">—</div></div><div><div class="tiny">POTENTIAL PROFIT</div><b id="slip-profit-preview" class="green">—</b></div></div>
+  <details id="slip-manual"><summary>✎ Edit / confirm slip details &amp; odds</summary>
+    <label>Bet name<input class="field" name="title" maxlength="150" placeholder="3-leg NBA parlay"></label>
+    <label>Exact selections — one per line<textarea class="field" name="legs" rows="4" placeholder="LeBron James 25+ points&#10;Lakers moneyline"></textarea></label>
+    <label>Combined slip odds (American +250 / -110 or decimal 3.50)<input class="field" name="odds" id="slip-odds" autocomplete="off" placeholder="+250" oninput="ppUpdatePayout()"></label>
+    <div class="tiny">If a link or photo doesn't reveal the complete slip, use these fields so we don't invent picks or odds.</div>
+  </details>
+  <button type="submit" id="slip-save" class="btn" style="width:100%;margin-top:15px">SAVE PLAY → RATE 0–10</button>
+  <div class="tiny" style="text-align:center;margin-top:10px">After saving, rate the posted play 0–10 on its card. You and Vic can rate independently.</div>
+</form></dialog>
 <dialog id="transfer-dialog"><form id="transfer-form"><div class="row"><h2>Record payment</h2><button type="button" class="btn secondary" onclick="document.getElementById('transfer-dialog').close()">✕</button></div><label>Sent by<select class="field" name="from" id="tf-from"></select></label><label>Received by<select class="field" name="to" id="tf-to"></select></label><label>Amount ($)<input class="field" type="number" min="0.01" step="0.01" name="amount" required></label><label>Note<input class="field" name="note" placeholder="Cash App settlement"></label><button class="btn" type="submit">Record transfer</button></form></dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -343,7 +378,7 @@ function oddsOf(b){const s=Number(b.stake),p=Number(b.payout);if(!s||!p||p<=0)re
 function ownerLabel(o){return o==='split'?splitLabel():o==='unassigned'?'Unassigned':shortName(o)+' personal'}
 function fundedLabel(f){return f==='both'?'Each paid own share':f==='unassigned'?'Unassigned':(NAMES[f]||f)}
 function showTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.id===t));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===t));window.scrollTo(0,0)}
-function openForm(m){mode=m;$('bet-form').reset();$('image-preview').innerHTML='';$('form-title').textContent=m==='proposal'?'Add Potential Play':'Upload Confirmed Bet';$('editor').showModal()}
+function openForm(m){mode=m;ppResetSlip();$('form-title').textContent=m==='proposal'?'New Potential Play':'Upload Confirmed Bet';$('editor').showModal()}
 function openTransfer(){const fill=(id,sel)=>{const el=$(id);if(el)el.innerHTML=SLOTS().map(w=>'<option value="'+w+'"'+(w===sel?' selected':'')+'>'+esc(NAMES[w])+'</option>').join('')};fill('tf-from',me?me.slot:SLOTS()[0]);fill('tf-to',SLOTS().find(w=>!me||w!==me.slot)||SLOTS()[0]);$('transfer-dialog').showModal()}
 function filterPlays(f,el){playFilter=f;document.querySelectorAll('#plays .chip').forEach(e=>e.classList.toggle('active',e===el));render()}
 function setPhoto(w,input){let f=input.files[0];if(!f)return;const r=new FileReader;r.onload=()=>{data.photos[w]=r.result;try{localStorage.setItem('pp-photos-v2',JSON.stringify(data.photos))}catch(e){}render()};r.readAsDataURL(f)}
@@ -352,7 +387,7 @@ function legsHtml(b){if(!b.legs||!b.legs.length)return '';const marks={pending:'
 function linkLabel(link){try{const h=new URL(link).hostname;if(h.includes('draftkings'))return 'Open in DraftKings';if(h.includes('fanduel'))return 'Open in FanDuel';if(h.includes('gambly'))return 'Open in Gambly'}catch(e){}return 'Open betslip link'}
 function voteRow(b,who){const v=b.votes[who]||0,a=!!b.appr[who],mine=me&&me.slot===who;return `<div class="voterow"><span class="who">👑 ${NAMES[who]}</span><button class="chip ${v===1?'on-up':''}" ${mine?`onclick="vote('${b.id}','${who}',1)"`:''}>👍</button><button class="chip ${v===-1?'on-down':''}" ${mine?`onclick="vote('${b.id}','${who}',-1)"`:''}>👎</button><button class="chip ${a?'on-appr':''}" ${mine?`onclick="approve('${b.id}','${who}')"`:''}>${a?'✓ Approved':'Approve'}</button></div>`}
 function classifyHtml(b){const own=['<option value="unassigned" '+(b.owner==='unassigned'?'selected':'')+'>Unassigned — decide later</option>','<option value="split" '+(b.owner==='split'?'selected':'')+'>'+splitLabel()+'</option>'].concat(SLOTS().map(w=>'<option value="'+w+'" '+(b.owner===w?'selected':'')+'>'+esc(NAMES[w])+' personal</option>')).join('');const fun=['<option value="unassigned" '+(b.funded==='unassigned'?'selected':'')+'>Unassigned — decide later</option>'].concat(SLOTS().slice().reverse().map(w=>'<option value="'+w+'" '+(b.funded===w?'selected':'')+'>'+esc(NAMES[w])+'</option>')).concat(['<option value="both" '+(b.funded==='both'?'selected':'')+'>Each paid their share</option>']).join('');return '<div class="grid2" style="margin-top:10px"><label>Ownership<select class="field" onchange="classify(\''+b.id+'\',\'owner\',this.value)">'+own+'</select></label><label>Funded by<select class="field" onchange="classify(\''+b.id+'\',\'funded\',this.value)">'+fun+'</select></label></div>'}
-function slip(b){const od=oddsOf(b);let h=`<article class="slip"><div class="row"><h3>${esc(b.title)}</h3><span class="row" style="gap:7px">${od?`<span class="odds">${od}</span>`:''}<span class="status ${esc(b.status)}">${esc(b.status)}</span></span></div><div class="tiny">${fmtDate(b)}</div>${legsHtml(b)}${legHint(b)}<div class="row" style="margin-top:12px"><div><span class="tiny">Stake</span><br><b>${money(b.stake)}</b></div><div><span class="tiny">Potential payout</span><br><b class="green">${money(b.payout)}</b></div><div><span class="tiny">Owner</span><br><b class="gold">${ownerLabel(b.owner)}</b></div><div><span class="tiny">Funded by</span><br><b>${fundedLabel(b.funded)}</b></div></div>`;
+function slip(b){const od=oddsOf(b);let h=`<article class="slip" data-play-id="${esc(b.id)}"><div class="row"><h3>${esc(b.title)}</h3><span class="row" style="gap:7px">${od?`<span class="odds">${od}</span>`:''}<span class="status ${esc(b.status)}">${esc(b.status)}</span></span></div><div class="tiny">${fmtDate(b)}</div>${legsHtml(b)}${legHint(b)}<div class="row" style="margin-top:12px"><div><span class="tiny">Stake</span><br><b>${money(b.stake)}</b></div><div><span class="tiny">Potential payout</span><br><b class="green">${money(b.payout)}</b></div><div><span class="tiny">Owner</span><br><b class="gold">${ownerLabel(b.owner)}</b></div><div><span class="tiny">Funded by</span><br><b>${fundedLabel(b.funded)}</b></div></div>`;
 if(b.image)h+=`<details style="margin-top:10px"><summary class="tiny">📷 View bet slip</summary><img src="${esc(b.image)}" style="width:100%;max-height:450px;object-fit:contain"></details>`;
 if(b.link)h+=`<p style="margin:10px 0 2px"><a class="chip" style="text-decoration:none" href="${esc(b.link)}" target="_blank" rel="noopener noreferrer">↗ ${linkLabel(b.link)}</a></p><div class="tiny">If the selections on this slip change, this link may no longer match — replace it with a fresh one.</div>`;
 h+=confRow(b);
@@ -432,14 +467,183 @@ async function importData(input){const f=input.files[0];if(!f||!me)return;const 
     if(error)throw error;const legs=(ob.legs||[]).map((l,i)=>({play_id:np.id,label:typeof l==='string'?l:l.text,status:LEG_TO[(typeof l==='string'?'pending':l.result)||'pending']||'pending',position:i+1}));if(legs.length)await sb.from('pp_legs').insert(legs)}
   for(const t of d.transfers||[]){const fp=profileIdOf(t.from),tp=profileIdOf(t.from==='quis'?'vic':'quis');if(fp&&tp)await sb.from('pp_transfers').insert({from_profile:fp,to_profile:tp,amount:Number(t.amount)||0,note:t.note||''})}
   alert('Backup imported into the shared backend.');refresh()}catch(e){alert('That file could not be imported: '+e.message)}};r.readAsText(f);input.value=''}
-$('bet-form').addEventListener('submit',async e=>{e.preventDefault();if(!me)return;const f=e.target,fd=new FormData(f),file=fd.get('image');
-  const kind=mode,ui=mode==='proposal'?'proposed':'pending',ds=dbStatusFor(kind,ui);
-  const {data:np,error}=await sb.from('pp_plays').insert({title:String(fd.get('title')),stake:Number(fd.get('stake')),potential_payout:Number(fd.get('payout')),status:ds.status,result:ds.result,ui_status:ui,kind,owner:fd.get('owner')==='split'?'shared':fd.get('owner'),funded_by:fd.get('funded'),sportsbook_url:String(fd.get('link')||'')||null,bet_date:new Date().toISOString().slice(0,10),created_by:me.id}).select().single();
-  if(error){alert(error.message);return}
-  const legs=String(fd.get('legs')||'').split('\n').map(x=>x.trim()).filter(Boolean).map((t,i)=>({play_id:np.id,label:t,status:'pending',position:i+1}));
-  if(legs.length){const {error:le}=await sb.from('pp_legs').insert(legs);if(le)alert(le.message)}
-  if(file&&file.size){if(file.size>5e6){alert('Choose an image smaller than 5 MB')}else{const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path=np.id+'/slip-'+Date.now()+'.'+ext;const {error:ue}=await sb.storage.from('pp-bet-slips').upload(path,file,{contentType:file.type||'image/jpeg'});if(ue)alert('Slip upload failed: '+ue.message);else await sb.from('pp_plays').update({slip_path:path}).eq('id',np.id)}}
-  $('editor').close();refresh();showTab(mode==='proposal'?'plays':'bets')});
+/* New fast bet importer (isolated from existing stats and settlement code). */
+let ppRequestId=0,ppLinkTimer=null,ppPreviewUrl='',ppImageForAI='',ppReading=false;
+function ppSetState(msg,isError){const el=document.getElementById('slip-import-state');el.textContent=msg;el.style.color=isError?'#ff8495':'#b9d6f4'}
+function ppResetSlip(){
+  clearTimeout(ppLinkTimer);ppRequestId++;ppReading=false;ppPreviewUrl='';ppImageForAI='';
+  const f=document.getElementById('bet-form');f.reset();
+  f.elements.owner.value=me&&['quis','vic'].includes(me.slot)?me.slot:'quis';
+  document.getElementById('slip-review').hidden=true;document.getElementById('slip-review').innerHTML='';
+  document.getElementById('image-preview').innerHTML='';document.getElementById('slip-manual').open=false;
+  ppSetState('Paste a share link or choose a screenshot. We will read available bet details.',false);
+  ppUpdatePayout();
+}
+function ppDecimalOdds(raw){
+  const s=String(raw||'').trim().replace(/,/g,'');
+  if(!s)return NaN;
+  const frac=s.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if(frac&&+frac[2]>0)return 1+(+frac[1]/+frac[2]);
+  if(!/^[+-]?\d+(?:\.\d+)?$/.test(s))return NaN;
+  const n=Number(s);
+  if(s.includes('.')&&n>1&&n<=100000)return n;
+  if(Number.isInteger(n)&&n>=100)return 1+n/100;
+  if(Number.isInteger(n)&&n<=-100)return 1+100/Math.abs(n);
+  return NaN;
+}
+function ppUpdatePayout(){
+  const f=document.getElementById('bet-form');
+  const stake=Number(f.elements.stake.value),decimal=ppDecimalOdds(f.elements.odds.value);
+  const valid=Number.isFinite(stake)&&stake>0&&Number.isFinite(decimal)&&decimal>1;
+  document.getElementById('slip-payout-preview').textContent=valid?money(Math.round(stake*decimal*100)/100):'—';
+  document.getElementById('slip-profit-preview').textContent=valid?money(Math.round(stake*(decimal-1)*100)/100):'—';
+}
+function ppShowReview(){
+  const f=document.getElementById('bet-form'),title=String(f.elements.title.value||'').trim(),
+    lines=String(f.elements.legs.value||'').split('\n').map(x=>x.trim()).filter(Boolean),
+    odds=String(f.elements.odds.value||'').trim();
+  const el=document.getElementById('slip-review');
+  if(!title&&!lines.length&&!odds){el.hidden=true;return}
+  el.hidden=false;
+  el.innerHTML='<b>'+esc(title||'Slip preview')+'</b>'+
+    (lines.length?'<ul>'+lines.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ul>':'<p class="tiny">Selections still needed</p>')+
+    '<div class="tiny">Total odds: <strong>'+esc(odds||'Not found')+'</strong></div>';
+}
+function ppExpandDetails(){document.getElementById('slip-manual').open=true}
+function ppQueueLink(){
+  clearTimeout(ppLinkTimer);ppRequestId++;ppPreviewUrl='';
+  const url=document.getElementById('slip-url').value.trim();
+  if(!url){ppSetState('Paste a share link or upload a screenshot.',false);return}
+  ppSetState('Ready to read your share link…',false);
+  ppLinkTimer=setTimeout(()=>ppReadLink(),450);
+}
+async function ppAnalyze(body,sequence){
+  ppReading=true;ppSetState('Reading selections and odds…',false);
+  try{
+    const response=await sb.functions.invoke('pp-slip-import',{body});
+    if(sequence!==ppRequestId)return;
+    if(response.error)throw new Error(response.error.message||'Could not read bet slip.');
+    const result=response.data||{};
+    if(result.error)throw new Error(result.error);
+    const info=result.slip||{};
+    const f=document.getElementById('bet-form');
+    if(info.title)f.elements.title.value=String(info.title).slice(0,150);
+    if(Array.isArray(info.legs)&&info.legs.length)f.elements.legs.value=info.legs.join('\n');
+    if(info.american_odds)f.elements.odds.value=String(info.american_odds);
+    else if(info.decimal_odds)f.elements.odds.value=String(info.decimal_odds);
+    ppShowReview();ppUpdatePayout();
+    const full=!!(f.elements.title.value.trim()&&f.elements.legs.value.trim()&&Number.isFinite(ppDecimalOdds(f.elements.odds.value)));
+    ppSetState(result.message||(full?'Review the imported slip before saving.':'Check missing details below.'),!full);
+    if(!full)ppExpandDetails();else document.getElementById('slip-manual').open=false;
+  }catch(e){
+    if(sequence!==ppRequestId)return;
+    ppSetState((e&&e.message?e.message:'This slip could not be read.')+' Upload a screenshot or edit details below.',true);
+    ppExpandDetails();
+  }finally{if(sequence===ppRequestId)ppReading=false}
+}
+async function ppReadLink(){
+  clearTimeout(ppLinkTimer);
+  const url=document.getElementById('slip-url').value.trim();
+  if(!url)return;
+  try{const u=new URL(url);if(u.protocol!=='https:')throw Error('Only HTTPS share links are supported.')}
+  catch(e){ppSetState('Enter a complete HTTPS share link.',true);ppExpandDetails();return}
+  ppPreviewUrl=url;
+  const sequence=++ppRequestId;
+  await ppAnalyze({url},sequence);
+}
+function ppImageData(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=()=>reject(new Error('Could not read screenshot.'));
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>reject(new Error('This image format cannot be read. Try JPG or PNG.'));
+      img.onload=()=>{
+        const factor=Math.min(1,1800/img.width,2800/img.height);
+        const c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(img.width*factor));c.height=Math.max(1,Math.round(img.height*factor));
+        const ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);
+        resolve(c.toDataURL('image/jpeg',.8));
+      };
+      img.src=String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function ppReadImage(el){
+  const file=el.files&&el.files[0];if(!file)return;
+  clearTimeout(ppLinkTimer);
+  const seq=++ppRequestId;
+  const preview=document.getElementById('image-preview');
+  preview.innerHTML='';
+  const img=document.createElement('img');img.className='slip-image-thumb';img.alt='Attached betting slip';img.src=URL.createObjectURL(file);
+  img.onload=()=>URL.revokeObjectURL(img.src);preview.appendChild(img);
+  try{
+    const dataURL=await ppImageData(file);
+    if(seq!==ppRequestId)return;
+    ppImageForAI=dataURL;
+    await ppAnalyze({imageDataUrl:dataURL},seq);
+  }catch(e){if(seq!==ppRequestId)return;ppSetState(e.message+' Fill in the odds and selections below.',true);ppExpandDetails()}
+}
+/* End fast importer. */
+$('bet-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!me)return;
+  const f=e.target,fd=new FormData(f),file=fd.get('image');
+  const title=String(fd.get('title')||'').trim();
+  const legsText=String(fd.get('legs')||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const stake=Number(fd.get('stake')),decimal=ppDecimalOdds(fd.get('odds'));
+  const owner=String(fd.get('owner')||'');
+  const link=String(fd.get('link')||'').trim();
+  if(!title||!legsText.length){ppSetState('The bet name and exact selections must be visible before saving. Expand Edit details to finish the slip.',true);ppExpandDetails();return}
+  if(!Number.isFinite(decimal)||decimal<=1){ppSetState('Combined total odds are missing or invalid. Expand Edit details, enter odds (for example +250), and your payout will calculate automatically.',true);ppExpandDetails();return}
+  if(!Number.isFinite(stake)||stake<=0){ppSetState('Enter how much you want to wager.',true);f.elements.stake.focus();return}
+  if(!['quis','vic','split'].includes(owner)){ppSetState('Choose Quis, Vic, or Both for ownership.',true);return}
+  if(link){try{if(new URL(link).protocol!=='https:')throw Error('invalid')}catch{ppSetState('Use a valid HTTPS share link.',true);return}}
+  const payout=Math.round(stake*decimal*100)/100;
+  if(!Number.isFinite(payout)||payout<=stake||payout>1e12){ppSetState('Payout cannot be calculated with these numbers.',true);return}
+  const button=document.getElementById('slip-save');button.disabled=true;button.textContent='Saving play…';
+  const kind=mode,ui=kind==='proposal'?'proposed':'pending',ds=dbStatusFor(kind,ui);
+  let created=null;let warning='';
+  try{
+    const {data:np,error}=await sb.from('pp_plays').insert({
+      title,stake,potential_payout:payout,status:ds.status,result:ds.result,ui_status:ui,kind,
+      owner:owner==='split'?'shared':owner,
+      funded_by:kind==='proposal'?'unassigned':owner==='split'?'both':owner,
+      sportsbook_url:link||null,bet_date:new Date().toISOString().slice(0,10),created_by:me.id
+    }).select().single();
+    if(error)throw error;
+    created=np;
+    const legs=legsText.map((text,i)=>({play_id:np.id,label:text,status:'pending',position:i+1}));
+    const {error:le}=await sb.from('pp_legs').insert(legs);
+    if(le)warning='Play saved, but some selections were not attached: '+le.message;
+    if(file&&file.size){
+      let imgFile=file;
+      if(file.size>5e6&&ppImageForAI){
+        const blob=await (await fetch(ppImageForAI)).blob();
+        imgFile=new File([blob],'slip.jpg',{type:'image/jpeg'});
+      }
+      if(imgFile.size>5e6)warning+=' Screenshot exceeded the 5 MB upload limit.';
+      else{
+        const ext=/^image\/(jpeg|png|webp)$/.test(imgFile.type)?imgFile.type.split('/')[1]:'jpg';
+        const imgPath=np.id+'/slip-'+Date.now()+'.'+ext;
+        const {error:ue}=await sb.storage.from('pp-bet-slips').upload(imgPath,imgFile,{contentType:imgFile.type||'image/jpeg'});
+        if(ue)warning+=' Screenshot could not be attached: '+ue.message;
+        else await sb.from('pp_plays').update({slip_path:imgPath}).eq('id',np.id);
+      }
+    }
+    document.getElementById('editor').close();
+    await loadAll();render();
+    const tab=kind==='proposal'?'plays':'bets';
+    showTab(tab);
+    const el=document.querySelector('[data-play-id="'+np.id+'"]');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+    if(warning)alert(warning);
+  }catch(err){
+    ppSetState('Could not save this play: '+(err.message||'Unknown error'),true);
+    if(created)ppSetState('Play saved, but finishing its details failed. Refresh the board before trying again to avoid duplicates.',true);
+  }finally{button.disabled=false;button.textContent='SAVE PLAY → RATE 0–10'}
+});
 $('transfer-form').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target);const from=fd.get('from'),to=fd.get('to'),fp=profileIdOf(from),tp=profileIdOf(to);if(!fp||!tp||from===to)return;const {error}=await sb.from('pp_transfers').insert({from_profile:fp,to_profile:tp,amount:Number(fd.get('amount')),note:fd.get('note')||''});if(error){alert(error.message);return}$('transfer-dialog').close();e.target.reset();refresh()});
 $('export').onclick=()=>{const out={bets:data.bets.map(b=>({id:b.id,kind:b.kind,status:b.status,created:b.created,date:b.date,title:b.title,legs:b.legs.map(l=>({text:l.text,result:l.result})),stake:b.stake,payout:b.payout,actual:b.actual,owner:b.owner,funded:b.funded,receiver:b.receiver,link:b.link,votes:b.votes,appr:b.appr,comments:b.comments,confidence:b.conf})),transfers:data.transfers};const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='potential-plays-backup.json';a.click();URL.revokeObjectURL(a.href)};
 $('signout').onclick=async()=>{await sb.auth.signOut();location.reload()};
