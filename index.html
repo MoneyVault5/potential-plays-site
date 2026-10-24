@@ -214,6 +214,22 @@ main{padding-bottom:110px}
 #slip-manual summary{cursor:pointer;color:#abd7ff;font-size:13px;font-weight:700}
 #slip-manual[open] summary{margin-bottom:11px}
 .slip-image-thumb{display:block;max-width:100%;max-height:170px;object-fit:contain;margin:8px auto;border:1px solid #24547c;border-radius:8px}
+
+/* Read-only scoreboard in Results — no other page redesign */
+.sports-score-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.sports-score-controls label{font-size:12px;color:#9dc8f0}
+.sports-score-controls .field{margin:6px 0 10px;width:100%;min-width:0}
+.sports-score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.sports-game{border:1px solid #205888;border-radius:10px;background:linear-gradient(150deg,#0b223d,#05111f);padding:12px;min-width:0}
+.sports-game-top,.sports-score-row{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.sports-game-top{font-size:11px;color:#a5b8cc;margin-bottom:9px}
+.sports-score-row{padding:6px 0;border-top:1px solid #24445c5c;font-size:13px}
+.sports-score-row b{font-size:17px;color:#f1f7ff}
+.sports-winner{font-weight:800;color:#61e7a3}
+.sports-state{font-size:10px;letter-spacing:.8px;font-weight:900}
+.sports-state.live{color:#3ee9a4}.sports-state.final{color:#eac879}.sports-state.upcoming{color:#9bc6e8}
+.sports-detail-link{display:inline-block;color:#7fbfff;font-size:11px;margin-top:10px;text-decoration:none}
+@media(max-width:650px){.sports-score-grid{grid-template-columns:1fr}.sports-score-controls{grid-template-columns:1fr 1fr;gap:8px}.sports-score-controls .field{font-size:13px;padding:10px 6px}}
 </style><style>/* TASK-0015 — members & invites */
 .mrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e416b}.mrow:last-of-type{border-bottom:0}
 .minfo{min-width:0}.macts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -276,7 +292,21 @@ main{padding-bottom:110px}
 </section>
 <section class="tab" id="plays"><div class="row"><div class="section-title">♛ POTENTIAL PLAYS</div><button class="btn" onclick="openForm('proposal')">+ New Play</button></div><div class="muted">BUILD · SHARE · DISCUSS · APPROVE</div><div class="row" style="margin-top:12px"><span class="tiny">Signed in as</span><b class="gold" id="me-label">…</b></div><div class="chips" style="margin:15px 0"><button class="chip active" onclick="filterPlays('all',this)">All</button><button class="chip" onclick="filterPlays('proposed',this)">Proposed</button><button class="chip" onclick="filterPlays('reviewing',this)">Reviewing</button><button class="chip" onclick="filterPlays('approved',this)">Approved</button><button class="chip" onclick="filterPlays('archived',this)">Archived</button></div><div id="proposals"></div></section>
 <section class="tab" id="bets"><div class="row"><div class="section-title">⚡ LIVE BETS</div><button class="btn" onclick="openForm('confirmed')">+ Upload</button></div><p class="muted">Confirmed sportsbook tickets. Tap a leg's circle to mark it Hit · Missed · Void when a result is verified. Settle the ticket only with a verified result.</p><div id="confirmed"></div></section>
-<section class="tab" id="results"><div class="section-title">🏆 RESULTS</div><p class="muted">Settled tickets — won, lost, and void — with verified payouts.</p><div id="results-list"></div></section>
+<section class="tab" id="results"><div class="section-title">🏆 RESULTS</div>
+<div class="card" id="sports-score-center">
+ <div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
+  <div><strong class="gold">⚡ LIVE SPORTS SCORES</strong><div class="tiny">Track game scores and final results</div></div>
+  <button class="btn secondary" id="sports-scores-refresh" type="button">↻ Refresh scores</button>
+ </div>
+ <div class="sports-score-controls">
+  <label>Sport<select class="field" id="sports-scores-league"><option value="nfl">NFL</option><option value="nba">NBA</option><option value="mlb">MLB</option><option value="nhl">NHL</option><option value="ncaaf">College Football</option><option value="ncaab">College Basketball</option></select></label>
+  <label>Game date<input class="field" type="date" id="sports-scores-date"></label>
+ </div>
+ <div class="tiny" id="sports-scores-status" role="status" aria-live="polite">Select a sport to check live and final game scores.</div>
+ <div id="sports-scores-list" class="sports-score-grid"></div>
+ <div class="tiny" style="margin-top:12px">Live scores do not automatically settle tickets. Props, parlays, pushes, overtime rules, and official sportsbook grading require verified market-level results. No bets or payouts change from this score feed.</div>
+</div>
+<div class="section-title">YOUR SETTLED TICKETS</div><p class="muted">Won, lost, and void tickets — payouts reflect verified settlement.</p><div id="results-list"></div></section>
 <section class="tab" id="calendar"><div class="section-title">📅 CALENDAR</div><p class="muted">Every play and ticket, grouped by its date.</p><div id="calendar-list"></div></section>
 <section class="tab" id="profiles"><div class="section-title">👥 OUR PROFILES</div><div class="photoedit" id="photoedit"><label>📷 Add Quis photo<input hidden type="file" accept="image/*" onchange="setPhoto('quis',this)"></label><label>📷 Add Vic photo<input hidden type="file" accept="image/*" onchange="setPhoto('vic',this)"></label></div><div id="invite-box"></div><div id="team-card"></div><div id="profile-cards"></div></section>
 <section class="tab" id="money"><div class="section-title">💼 MONEY TRACKER</div><div class="card"><div class="muted">CURRENT NET BALANCE</div><div class="balance gold" id="money-balance">$0.00</div><div class="muted" id="money-caption"></div></div><div id="money-summary"></div><div class="card"><div class="section-title" style="margin-top:0">📈 NET PROFIT OVER TIME</div><div id="pnl-chart"></div></div><div class="row"><div class="section-title">PAYMENT HISTORY</div><button class="btn" onclick="openTransfer()">+ Transfer</button></div><div id="transfers"></div><div class="card"><p class="muted">Balances reflect shared bets funded by one person, payouts received, and recorded transfers. Personal bets never create shared debt. Debt is tracked separately from betting profit/loss.</p></div></section>
@@ -802,4 +832,4 @@ function renderVault(){if(!me)return;
   const rl=$('results-list');if(rl)rl.innerHTML=settled.length?settled.slice().reverse().map(slip).join(''):'<div class="empty">No settled bets yet — results land here as tickets are graded.</div>';
   const cl=$('calendar-list');if(cl){const byD={};for(const b of data.bets){(byD[b.date]=byD[b.date]||[]).push(b)}const days=Object.keys(byD).sort().reverse();cl.innerHTML=days.length?days.map(d=>`<div class="section-title" style="font-size:14px">${esc(d)}</div>`+byD[d].map(b=>`<div class="card row"><div><b>${esc(b.title)}</b><div class="tiny">${b.kind==='proposal'?'Potential play':'Confirmed bet'} · ${money(b.stake)} · ${ownerLabel(b.owner)}</div></div><span class="status ${esc(b.status)}">${esc(b.status)}</span></div>`).join('')).join(''):'<div class="empty">Nothing on the calendar yet.</div>'}
 }
-</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}</script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}</script><script defer src="./sports-scores.js?v=1"></script></body></html>
