@@ -230,6 +230,26 @@ main{padding-bottom:110px}
 .sports-state.live{color:#3ee9a4}.sports-state.final{color:#eac879}.sports-state.upcoming{color:#9bc6e8}
 .sports-detail-link{display:inline-block;color:#7fbfff;font-size:11px;margin-top:10px;text-decoration:none}
 @media(max-width:650px){.sports-score-grid{grid-template-columns:1fr}.sports-score-controls{grid-template-columns:1fr 1fr;gap:8px}.sports-score-controls .field{font-size:13px;padding:10px 6px}}
+
+/* Live player-prop tracker: same approved black/navy/blue/gold layout. */
+.pp-prop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pp-live-prop{border:1px solid #1c5484;background:linear-gradient(145deg,#091b30,#06101f);padding:13px;border-radius:11px;min-width:0}
+.pp-prop-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pp-prop-top b{display:block;font-size:14px;color:#f7f9fd;margin-bottom:2px}
+.pp-prop-state{display:inline-block;white-space:nowrap;border-radius:5px;padding:5px 7px;font-size:10px;font-weight:900;letter-spacing:.3px;border:1px solid #214663;color:#a6c6e0}
+.pp-prop-state.live{color:#35ecab;border-color:#208b69}
+.pp-prop-state.final{color:#f1c878;border-color:#8d7035}
+.pp-prop-numbers{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:12px 0 8px;font-weight:900}
+.pp-prop-numbers strong{font-size:25px;line-height:1;color:#f4f8fe;font-variant-numeric:tabular-nums}
+.pp-prop-numbers strong span{font-size:17px;color:#9baec6}
+.pp-prop-numbers>span{font-size:15px;color:#f3cb75}
+.pp-prop-track{height:12px;overflow:hidden;border:1px solid #285780;background:#071323;border-radius:20px}
+.pp-prop-track>span{height:100%;display:block;border-radius:20px;transition:width .65s ease;box-shadow:0 0 12px #149bff44}
+.pp-prop-note{margin-top:8px;line-height:1.35;color:#9fb3c9}
+.pp-live-props-placeholder:not([hidden]){margin-top:12px}
+.pp-live-props-placeholder .pp-live-prop{margin:8px 0}
+@media(max-width:700px){.pp-prop-grid{grid-template-columns:1fr}.pp-prop-top b{font-size:13px}.pp-prop-state{font-size:9px}.pp-live-prop{padding:11px}}
+@media(prefers-reduced-motion:reduce){.pp-prop-track>span{transition:none}}
 </style><style>/* TASK-0015 — members & invites */
 .mrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e416b}.mrow:last-of-type{border-bottom:0}
 .minfo{min-width:0}.macts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
@@ -291,7 +311,17 @@ main{padding-bottom:110px}
   </div>
 </section>
 <section class="tab" id="plays"><div class="row"><div class="section-title">♛ POTENTIAL PLAYS</div><button class="btn" onclick="openForm('proposal')">+ New Play</button></div><div class="muted">BUILD · SHARE · DISCUSS · APPROVE</div><div class="row" style="margin-top:12px"><span class="tiny">Signed in as</span><b class="gold" id="me-label">…</b></div><div class="chips" style="margin:15px 0"><button class="chip active" onclick="filterPlays('all',this)">All</button><button class="chip" onclick="filterPlays('proposed',this)">Proposed</button><button class="chip" onclick="filterPlays('reviewing',this)">Reviewing</button><button class="chip" onclick="filterPlays('approved',this)">Approved</button><button class="chip" onclick="filterPlays('archived',this)">Archived</button></div><div id="proposals"></div></section>
-<section class="tab" id="bets"><div class="row"><div class="section-title">⚡ LIVE BETS</div><button class="btn" onclick="openForm('confirmed')">+ Upload</button></div><p class="muted">Confirmed sportsbook tickets. Tap a leg's circle to mark it Hit · Missed · Void when a result is verified. Settle the ticket only with a verified result.</p><div id="confirmed"></div></section>
+<section class="tab" id="bets"><div class="row"><div class="section-title">⚡ LIVE BETS</div><button class="btn" onclick="openForm('confirmed')">+ Upload</button></div>
+<div class="card" id="pp-prop-center" style="margin:10px 0 17px">
+ <div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
+  <div><div class="section-title" style="margin:0">⚡ LIVE PLAYER PROP TRACKER</div><div class="tiny">Your saved NFL player prop progress as games are played</div></div>
+  <button type="button" class="btn secondary" id="pp-prop-refresh" onclick="window.PPLiveProps&&window.PPLiveProps.refresh()">↻ Refresh props</button>
+ </div>
+ <div class="tiny" id="pp-prop-status" role="status" aria-live="polite" style="margin:10px 0;color:#a3c4e6">Checking saved player props…</div>
+ <div id="pp-prop-center-list" class="pp-prop-grid"></div>
+ <div class="tiny" style="margin-top:10px">NFL rushing, receiving, and passing yards plus receptions. Stats are informational from ESPN's unofficial live feed, may update late or be corrected, and do not automatically settle wagers.</div>
+</div>
+<p class="muted">Confirmed sportsbook tickets. Tap a leg's circle to mark it Hit · Missed · Void when a result is verified. Settle the ticket only with a verified result.</p><div id="confirmed"></div></section>
 <section class="tab" id="results"><div class="section-title">🏆 RESULTS</div>
 <div class="card" id="sports-score-center">
  <div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
@@ -408,7 +438,7 @@ function fmtDate(b){const d=b.date||(b.created||'').slice(0,10);if(!d)return '';
 function oddsOf(b){const s=Number(b.stake),p=Number(b.payout);if(!s||!p||p<=0)return '';const dec=p/s;if(dec>=2)return '+'+Math.round((dec-1)*100);if(dec>1)return String(Math.round(-100/(dec-1)));return ''}
 function ownerLabel(o){return o==='split'?splitLabel():o==='unassigned'?'Unassigned':shortName(o)+' personal'}
 function fundedLabel(f){return f==='both'?'Each paid own share':f==='unassigned'?'Unassigned':(NAMES[f]||f)}
-function showTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.id===t));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===t));window.scrollTo(0,0)}
+function showTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('active',e.id===t));document.querySelectorAll('[data-nav]').forEach(e=>e.classList.toggle('active',e.dataset.nav===t));window.scrollTo(0,0);if(t==='bets'&&window.PPLiveProps)window.PPLiveProps.activate()}
 function openForm(m){mode=m;ppResetSlip();$('form-title').textContent=m==='proposal'?'New Potential Play':'Upload Confirmed Bet';$('editor').showModal()}
 function openTransfer(){const fill=(id,sel)=>{const el=$(id);if(el)el.innerHTML=SLOTS().map(w=>'<option value="'+w+'"'+(w===sel?' selected':'')+'>'+esc(NAMES[w])+'</option>').join('')};fill('tf-from',me?me.slot:SLOTS()[0]);fill('tf-to',SLOTS().find(w=>!me||w!==me.slot)||SLOTS()[0]);$('transfer-dialog').showModal()}
 function filterPlays(f,el){playFilter=f;document.querySelectorAll('#plays .chip').forEach(e=>e.classList.toggle('active',e===el));render()}
@@ -421,6 +451,7 @@ function classifyHtml(b){const own=['<option value="unassigned" '+(b.owner==='un
 function slip(b){const od=oddsOf(b);let h=`<article class="slip" data-play-id="${esc(b.id)}"><div class="row"><h3>${esc(b.title)}</h3><span class="row" style="gap:7px">${od?`<span class="odds">${od}</span>`:''}<span class="status ${esc(b.status)}">${esc(b.status)}</span></span></div><div class="tiny">${fmtDate(b)}</div>${legsHtml(b)}${legHint(b)}<div class="row" style="margin-top:12px"><div><span class="tiny">Stake</span><br><b>${money(b.stake)}</b></div><div><span class="tiny">Potential payout</span><br><b class="green">${money(b.payout)}</b></div><div><span class="tiny">Owner</span><br><b class="gold">${ownerLabel(b.owner)}</b></div><div><span class="tiny">Funded by</span><br><b>${fundedLabel(b.funded)}</b></div></div>`;
 if(b.image)h+=`<details style="margin-top:10px"><summary class="tiny">📷 View bet slip</summary><img src="${esc(b.image)}" style="width:100%;max-height:450px;object-fit:contain"></details>`;
 if(b.link)h+=`<p style="margin:10px 0 2px"><a class="chip" style="text-decoration:none" href="${esc(b.link)}" target="_blank" rel="noopener noreferrer">↗ ${linkLabel(b.link)}</a></p><div class="tiny">If the selections on this slip change, this link may no longer match — replace it with a fresh one.</div>`;
+h+=`<div class="pp-live-props-placeholder" data-pp-play="${esc(b.id)}" hidden></div>`;
 h+=confRow(b);
 if(b.kind==='confirmed'){
   if(b.status==='won')h+=`<div class="tiny" style="margin-top:8px">Settled payout: <b class="green">${money(b.actual??b.payout)}</b>${b.receiver?` · received by ${NAMES[b.receiver]||b.receiver}`:''}</div>`;
@@ -473,7 +504,7 @@ $('profile-cards').innerHTML=SLOTS().map(w=>{const pers=confirmed.filter(b=>b.ow
 const shared=confirmed.filter(b=>b.owner==='split'),sw=shared.reduce((a,b)=>a+Number(b.stake),0),sp=shared.reduce((a,b)=>a+(b.status==='won'?Number(b.actual??b.payout):b.status==='void'?Number(b.stake):0),0),un=confirmed.filter(b=>b.owner==='unassigned');
 $('money-summary').innerHTML=`<div class="card"><div class="section-title" style="margin-top:0">🤝 SHARED BETS SUMMARY</div><div class="kv"><span>Total shared bets</span><b>${shared.length}</b></div><div class="kv"><span>Shared wagered</span><b>${money(sw)}</b></div><div class="kv"><span>Shared payout</span><b class="green">${money(sp)}</b></div><div class="kv"><span>Net (shared)</span><b class="${sp-sw>=0?'green':'red'}">${money(sp-sw)}</b></div>${SLOTS().map(w=>'<div class="kv"><span>'+esc(NAMES[w])+' share ('+(SLOTS().length===2?'50/50':'equal')+')</span><b>'+money(sw*shareFrac())+'</b></div>').join('')}</div>`+(un.length?`<div class="card"><div class="section-title" style="margin-top:0">❔ UNASSIGNED BETS</div><div class="tiny">${un.length} confirmed bet${un.length===1?'':'s'} (${money(un.reduce((a,b)=>a+Number(b.stake),0))} staked) still need an ownership call. They count in the overall record but stay out of the balance and personal stats until classified on the Live Bets tab.</div></div>`:'');
 $('pnl-chart').innerHTML=pnlChart();
-$('transfers').innerHTML=data.transfers.slice().reverse().map(t=>`<div class="card row"><div><b>${esc(NAMES[t.from]||t.from)} → ${esc(NAMES[t.to]||t.to)}</b><div class="tiny">${esc(t.note)} · ${new Date(t.created).toLocaleDateString()}</div></div><strong class="green">${money(t.amount)}</strong></div>`).join('')||'<div class="empty">No payments recorded yet</div>';renderVault()}
+$('transfers').innerHTML=data.transfers.slice().reverse().map(t=>`<div class="card row"><div><b>${esc(NAMES[t.from]||t.from)} → ${esc(NAMES[t.to]||t.to)}</b><div class="tiny">${esc(t.note)} · ${new Date(t.created).toLocaleDateString()}</div></div><strong class="green">${money(t.amount)}</strong></div>`).join('')||'<div class="empty">No payments recorded yet</div>';renderVault();if(window.PPLiveProps)window.PPLiveProps.render(data.bets)}
 function findBet(id){return data.bets.find(x=>x.id===id)}
 async function patchPlay(b,patch){const {error}=await sb.from('pp_plays').update(patch).eq('id',b.id);if(error)alert(error.message);refresh()}
 async function setUiStatus(b,ui){const d=dbStatusFor(b.kind,ui);await patchPlay(b,{ui_status:ui,status:d.status,result:d.result})}
@@ -832,4 +863,4 @@ function renderVault(){if(!me)return;
   const rl=$('results-list');if(rl)rl.innerHTML=settled.length?settled.slice().reverse().map(slip).join(''):'<div class="empty">No settled bets yet — results land here as tickets are graded.</div>';
   const cl=$('calendar-list');if(cl){const byD={};for(const b of data.bets){(byD[b.date]=byD[b.date]||[]).push(b)}const days=Object.keys(byD).sort().reverse();cl.innerHTML=days.length?days.map(d=>`<div class="section-title" style="font-size:14px">${esc(d)}</div>`+byD[d].map(b=>`<div class="card row"><div><b>${esc(b.title)}</b><div class="tiny">${b.kind==='proposal'?'Potential play':'Confirmed bet'} · ${money(b.stake)} · ${ownerLabel(b.owner)}</div></div><span class="status ${esc(b.status)}">${esc(b.status)}</span></div>`).join('')).join(''):'<div class="empty">Nothing on the calendar yet.</div>'}
 }
-</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}</script><script defer src="./sports-scores.js?v=1"></script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}</script><script defer src="./live-props.js?v=1"></script><script defer src="./sports-scores.js?v=1"></script></body></html>
