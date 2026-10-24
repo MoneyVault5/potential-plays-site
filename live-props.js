@@ -240,4 +240,6 @@ window.PPLiveProps={render,activate,refresh,parse,extractGames};
 byId('pp-prop-refresh')?.addEventListener('click',refresh);
 timer=setInterval(()=>{if(byId('bets')?.classList.contains('active')&&!document.hidden)check()},REFRESH_MS);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&byId('bets')?.classList.contains('active'))check()});
+// Rehydrate player bars if login completed before this deferred script loaded.
+if(byId('appwrap')&&!byId('appwrap').hidden&&typeof window.render==='function')window.render();
 })();
