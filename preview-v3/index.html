@@ -467,7 +467,7 @@ function badgeFor(b){const a=confAvg(b);if(a!=null){if(a>=9)return['HOT PICK','h
 function timeAgo(ts){if(!ts)return '';const s=(Date.now()-ts)/1000;if(s<3600)return Math.max(1,Math.round(s/60))+'m ago';if(s<86400)return Math.round(s/3600)+'h ago';return Math.round(s/86400)+'d ago'}
 function feedCard(b){const a=confAvg(b),bd=badgeFor(b),poster=b.poster?NAMES[b.poster]:((b.owner==='quis'||b.owner==='vic')?NAMES[b.owner]:'Potential Plays');
   const fire=(b.votes.quis===1?1:0)+(b.votes.vic===1?1:0)+(b.appr.quis?1:0)+(b.appr.vic?1:0);
-  const kindChip=b.legs.length>1?'PARLAY · '+b.legs.length+' LEGS':(b.legs.length===1?'SINGLE':'PLAY');
+  const kindChip=/parlay/i.test(b.title)?'PARLAY':(b.legs.length>1?'PARLAY · '+b.legs.length+' LEGS':(b.legs.length===1?'SINGLE':'PLAY'));
   const sub=b.legs.length?esc(b.legs[0].text):'';
   const img=b.image?`<img src="${esc(b.image)}" alt="">`:`<div class="fimgx">${esc((b.title||'P').trim().charAt(0).toUpperCase())}</div>`;
   return `<article class="fcard" onclick="showTab('${b.kind==='proposal'?'plays':'bets'}')">
@@ -476,7 +476,7 @@ function feedCard(b){const a=confAvg(b),bd=badgeFor(b),poster=b.poster?NAMES[b.p
     <div class="fmeta">${esc(fmtDate(b))}${b.link?' · '+esc(linkLabel(b.link)):''} · ${esc(ownerLabel(b.owner))}</div>
     <h3 class="ftitle">${esc(b.title)}</h3>
     ${sub?`<div class="fsub">${sub}</div>`:''}
-    <div class="fbadges"><span class="fbadge ${bd[1]}">${bd[0]}</span><span class="fchip">${kindChip}</span><span class="fchip">${esc(String(b.status||'').toUpperCase())}</span><span class="fchip gold">${money(b.stake)} → ${money(b.payout)}</span></div>
+    <div class="fbadges"><span class="fbadge ${bd[1]}">${bd[0]}</span><span class="fchip">${kindChip}</span>${String(b.status||'').toUpperCase()!==bd[0]?`<span class="fchip">${esc(String(b.status||'').toUpperCase())}</span>`:''}<span class="fchip gold">${money(b.stake)} → ${money(b.payout)}</span></div>
   </div>
   <div class="fconf"><div class="flabel">CONFIDENCE</div><div class="fscore">${a!=null?(Math.round(a*10)/10)+'/10':'—/10'}</div><div class="fbar"><i style="width:${a!=null?Math.round(a*10):0}%"></i></div></div>
   <div class="fside">
